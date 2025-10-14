@@ -130,6 +130,7 @@
   <div class="d-flex align-items-center justify-content-between mb-2">
     <h2 class="h5 mb-0">2) Valutazione</h2>
     <div class="d-flex gap-2">
+      <button id="exportAllPdfsBtn" class="btn btn-outline-success" type="button">Esporta griglie (PDF)</button>
       <button id="exportAllBtn" class="btn btn-outline-primary" type="button">Esporta tutto (JSON)</button>
       <button id="backToSetupBtn" class="btn btn-outline-secondary" type="button">← Torna alla configurazione</button>
     </div>
@@ -283,9 +284,6 @@
       const tableHtml = buildStudentTableHtml(stu);
 
       $("#studentsTabContent").append('<div class="tab-pane fade '+isShow+'" id="'+paneId+'" role="tabpanel" aria-labelledby="'+tabId+'">\
-       <div class="toolbar d-flex justify-content-end">\
-         <button class="btn btn-sm btn-outline-danger" data-export-pdf="'+escapeHtml(stu)+'">Esporta PDF</button>\
-       </div>\
        <div class="table-responsive">'+tableHtml+'</div>\
      </div>');
     });
@@ -297,11 +295,6 @@
       const val     = $(this).val();
       setSavedLevel(student, exId, indId, val === "" ? null : Number(val));
       recalcForStudent(student);
-    });
-
-    $("[data-export-pdf]").on("click", function(){
-      const student = $(this).attr("data-export-pdf");
-      exportStudentPDF(student);
     });
 
     app.students.forEach(function(stu){ recalcForStudent(stu); });
@@ -514,6 +507,24 @@
     doc.save(student + '_griglia.pdf');
   }
 
+  function exportAllStudentPDFs(){
+    if (!app.students.length){
+      alert('Nessuno studente disponibile per l\'esportazione.');
+      return;
+    }
+    const students = app.students.slice();
+    let idx = 0;
+    function triggerNext(){
+      if (idx >= students.length) return;
+      const current = students[idx++];
+      exportStudentPDF(current);
+      if (idx < students.length){
+        setTimeout(triggerNext, 300);
+      }
+    }
+    triggerNext();
+  }
+
   $(function(){
     function loadStudentsFromFile(file){
       const reader=new FileReader();
@@ -547,6 +558,7 @@
 
     $("#exportConfigOnlyBtn").on("click", exportConfigOnly);
     $("#exportAllBtn").on("click", exportAll);
+    $("#exportAllPdfsBtn").on("click", exportAllStudentPDFs);
     $("#importFile").on("change", function(){ const file=this.files[0]; if(file) importAnyFromFile(file); this.value=""; });
   });
   function recalcSetupPreview(){

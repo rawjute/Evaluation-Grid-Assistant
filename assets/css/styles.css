@@ -1,0 +1,13 @@
+body { padding: 24px; }
+.section-card { border: 1px solid #e5e7eb; border-radius: 12px; padding: 16px; margin-bottom: 20px; }
+.indicator-label { font-weight: 600; }
+.total-badge { font-size: 1rem; }
+.cell-disabled { color: #9ca3af; text-align: center; }
+.id-badge { font-size: .8rem; }
+.small-input { max-width: 140px; }
+.dropzone { border: 2px dashed #94a3b8; border-radius: 10px; padding: 14px; text-align: center; color: #64748b; }
+.dropzone.dragover { background: #f1f5f9; }
+.ex-covers { max-height: 260px; overflow: auto; padding-right: 6px; }
+.ex-covers .form-check { display: block; margin: .15rem 0; }
+.ex-covers .form-check-label small { color: #6b7280; font-weight: 400; }
+.toolbar { margin-bottom: .5rem; }

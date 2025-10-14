@@ -3,569 +3,136 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Valutatore Verifiche – v1.10.3 (fix Unexpected string)</title>
+  <title>Valutatore Verifiche – Multi-file v1.11</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="./assets/css/styles.css" rel="stylesheet">
   <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.1/dist/jspdf.plugin.autotable.min.js"></script>
-  <style>
-    body { padding: 24px; }
-    .section-card { border: 1px solid #e5e7eb; border-radius: 12px; padding: 16px; margin-bottom: 20px; }
-    .indicator-label { font-weight: 600; }
-    .total-badge { font-size: 1rem; }
-    .cell-disabled { color: #9ca3af; text-align: center; }
-    .id-badge { font-size: .8rem; }
-    .small-input { max-width: 140px; }
-    .dropzone { border: 2px dashed #94a3b8; border-radius: 10px; padding: 14px; text-align: center; color: #64748b; }
-    .dropzone.dragover { background: #f1f5f9; }
-    .ex-covers { max-height: 260px; overflow: auto; padding-right: 6px; }
-    .ex-covers .form-check { display: block; margin: .15rem 0; }
-    .ex-covers .form-check-label small { color: #6b7280; font-weight: 400; }
-    .toolbar { margin-bottom: .5rem; }
-  </style>
+  <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
 </head>
 <body>
-<header class="mb-4 d-flex align-items-center justify-content-between">
-  <h1 class="h3 mb-0">Valutatore Verifiche</h1>
-  <div class="text-muted">v1.10.3</div>
-</header>
+  <header class="mb-4 d-flex align-items-center justify-content-between">
+    <h1 class="h3 mb-0">Valutatore Verifiche</h1>
+    <div class="text-muted">Multi-file v1.11</div>
+  </header>
 
-<section class="section-card" id="setupSection">
-  <h2 class="h5 mb-3">1) Configurazione</h2>
-  <div class="mb-4">
-    <h3 class="h6">Elenco studenti</h3>
-    <div class="row g-3">
-      <div class="col-12 col-lg-6">
-        <div class="d-flex flex-wrap gap-2 align-items-center">
-          <input type="file" id="studentFile" accept=".txt,.csv,.tsv,text/plain" class="form-control w-auto" />
-          <button id="clearStudentsBtn" class="btn btn-outline-secondary" type="button">Svuota</button>
+  <section class="section-card" id="setupSection">
+    <h2 class="h5 mb-3">1) Configurazione</h2>
+    <div class="mb-4">
+      <h3 class="h6">Elenco studenti</h3>
+      <div class="row g-3">
+        <div class="col-12 col-lg-6">
+          <div class="d-flex flex-wrap gap-2 align-items-center">
+            <input type="file" id="studentFile" accept=".txt,.csv,.tsv,text/plain" class="form-control w-auto" />
+            <button id="clearStudentsBtn" class="btn btn-outline-secondary" type="button">Svuota</button>
+          </div>
+          <div id="studentsDrop" class="dropzone mt-2">Trascina qui un file .txt/.csv (un nome per riga)</div>
         </div>
-        <div id="studentsDrop" class="dropzone mt-2">Trascina qui un file .txt/.csv (un nome per riga)</div>
-      </div>
-      <div class="col-12 col-lg-6">
-        <label for="studentsPaste" class="form-label mb-1">Oppure incolla (uno per riga, o separati da virgola/punto e virgola)</label>
-        <textarea id="studentsPaste" class="form-control" rows="4" placeholder="Mario Rossi&#10;Lucia Bianchi&#10;..."></textarea>
-        <div class="mt-2">
-          <button id="parseStudentsPasteBtn" class="btn btn-outline-primary btn-sm" type="button">Importa da testo</button>
+        <div class="col-12 col-lg-6">
+          <label for="studentsPaste" class="form-label mb-1">Oppure incolla (uno per riga, o separati da virgola/punto e virgola)</label>
+          <textarea id="studentsPaste" class="form-control" rows="4" placeholder="Mario Rossi&#10;Lucia Bianchi&#10;..."></textarea>
+          <div class="mt-2">
+            <button id="parseStudentsPasteBtn" class="btn btn-outline-primary btn-sm" type="button">Importa da testo</button>
+          </div>
         </div>
       </div>
+      <div id="studentsPreview" class="mt-3"></div>
     </div>
-    <div id="studentsPreview" class="mt-3"></div>
-  </div>
 
-  <hr />
+    <hr />
 
-  <div class="mb-4">
-    <h3 class="h6 mb-2">Indicatori</h3>
-    <div class="table-responsive">
-      <table class="table table-sm align-middle" id="indicatorsTable">
-        <thead>
-        <tr>
-          <th style="width:8%">ID</th>
-          <th style="width:57%">Nome</th>
-          <th style="width:20%">Punteggio massimo</th>
-          <th style="width:15%" class="text-end">
-            <button id="addIndicatorRow" class="btn btn-sm btn-outline-success" type="button">+ Aggiungi indicatore</button>
-          </th>
-        </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-    </div>
-    <div>Fasce: <strong>Eccellente (100%)</strong>, <strong>Buono (80%)</strong>, <strong>Sufficiente (60%)</strong>, <strong>Insufficiente (45%)</strong>, <strong>Gravemente insufficiente (20%)</strong>.</div>
-  </div>
-
-  <hr />
-
-  <div class="mb-3">
-    <h3 class="h6 mb-2">Esercizi</h3>
-    <div class="row g-2 align-items-end mb-2">
-      <div class="col-auto">
-        <label for="exerciseCount" class="form-label">Numero esercizi</label>
-        <input type="number" min="1" id="exerciseCount" class="form-control" placeholder="es. 6" />
+    <div class="mb-4">
+      <h3 class="h6 mb-2">Indicatori</h3>
+      <div class="table-responsive">
+        <table class="table table-sm align-middle" id="indicatorsTable">
+          <thead>
+            <tr>
+              <th style="width:8%">ID</th>
+              <th style="width:57%">Nome</th>
+              <th style="width:20%">Punteggio massimo</th>
+              <th style="width:15%" class="text-end">
+                <button id="addIndicatorRow" class="btn btn-sm btn-outline-success" type="button">+ Aggiungi indicatore</button>
+              </th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
       </div>
-      <div class="col-auto">
-        <button id="generateExercisesBtn" class="btn btn-outline-primary" type="button">Rigenera elenco esercizi</button>
-      </div>
+      <div>Fasce: <strong>Eccellente (100%)</strong>, <strong>Buono (80%)</strong>, <strong>Sufficiente (60%)</strong>, <strong>Insufficiente (45%)</strong>, <strong>Gravemente insufficiente (20%)</strong>.</div>
     </div>
-    <div class="table-responsive">
-      <table class="table table-sm align-middle" id="exercisesTable">
-        <thead>
-        <tr>
-          <th style="width:10%">ID</th>
-          <th style="width:20%">Modificatore (−/+ decimali)</th>
-          <th>Indicatori coperti</th>
-          <th class="text-end" style="width: 10%"></th>
-        </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-    </div>
-  </div>
 
-  <div class="alert alert-info" id="setupPreview">
-    <div class="d-flex flex-wrap align-items-center justify-content-between">
-      <div>
-        <span class="me-2">Totale teorico (tutti in Eccellente):</span>
-        <span class="badge text-bg-primary total-badge" data-setup-total>0.0</span>
-        <span class="ms-3 me-2">Scarto da 10:</span>
-        <span class="badge text-bg-warning total-badge" data-setup-delta>+10.0</span>
+    <hr />
+
+    <div class="mb-3">
+      <h3 class="h6 mb-2">Esercizi</h3>
+      <div class="row g-2 align-items-end mb-2">
+        <div class="col-auto">
+          <label for="exerciseCount" class="form-label">Numero esercizi</label>
+          <input type="number" min="1" id="exerciseCount" class="form-control" placeholder="es. 6" />
+        </div>
+        <div class="col-auto">
+          <button id="generateExercisesBtn" class="btn btn-outline-primary" type="button">Rigenera elenco esercizi</button>
+        </div>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-sm align-middle" id="exercisesTable">
+          <thead>
+            <tr>
+              <th style="width:10%">ID</th>
+              <th style="width:20%">Modificatore (−/+ decimali)</th>
+              <th>Indicatori coperti</th>
+              <th class="text-end" style="width: 10%"></th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
       </div>
     </div>
-    <div class="mt-2" id="coverageWarnings"></div>
-  </div>
 
-  <div class="d-flex gap-2">
-    <button id="startEvalBtn" class="btn btn-primary" type="button">Vai alla valutazione</button>
-    <button id="exportConfigOnlyBtn" class="btn btn-outline-secondary" type="button">Esporta configurazione (JSON)</button>
-    <label class="btn btn-outline-secondary mb-0">
-      Importa configurazione o verifica completa (JSON)
-      <input type="file" id="importFile" accept="application/json" hidden />
-    </label>
-  </div>
-</section>
+    <div class="alert alert-info" id="setupPreview">
+      <div class="d-flex flex-wrap align-items-center justify-content-between">
+        <div>
+          <span class="me-2">Totale teorico (tutti in Eccellente):</span>
+          <span class="badge text-bg-primary total-badge" data-setup-total>0.0</span>
+          <span class="ms-3 me-2">Scarto da 10:</span>
+          <span class="badge text-bg-warning total-badge" data-setup-delta>+10.0</span>
+        </div>
+      </div>
+      <div class="mt-2" id="coverageWarnings"></div>
+    </div>
 
-<section class="section-card d-none" id="evaluationSection">
-  <div class="d-flex align-items-center justify-content-between mb-2">
-    <h2 class="h5 mb-0">2) Valutazione</h2>
     <div class="d-flex gap-2">
-      <button id="exportAllBtn" class="btn btn-outline-primary" type="button">Esporta tutto (JSON)</button>
-      <button id="backToSetupBtn" class="btn btn-outline-secondary" type="button">← Torna alla configurazione</button>
+      <button id="startEvalBtn" class="btn btn-primary" type="button">Vai alla valutazione</button>
+      <button id="exportConfigOnlyBtn" class="btn btn-outline-secondary" type="button">Esporta configurazione (JSON)</button>
+      <label class="btn btn-outline-secondary mb-0">
+        Importa configurazione o verifica completa (JSON)
+        <input type="file" id="importFile" accept="application/json" hidden />
+      </label>
     </div>
-  </div>
-  <ul class="nav nav-tabs" id="studentsTabs" role="tablist"></ul>
-  <div class="tab-content" id="studentsTabContent"></div>
-</section>
+  </section>
 
-<script>
-  const LEVELS = [
-    { label: "Gravemente insufficiente (20%)", coef: 0.2 },
-    { label: "Insufficiente (45%)",            coef: 0.45 },
-    { label: "Sufficiente (60%)",              coef: 0.6 },
-    { label: "Buono (80%)",                    coef: 0.8 },
-    { label: "Eccellente (100%)",              coef: 1.0 }
-  ];
-  const app = { students: [], indicators: [], exercises: [], resultsMap: {}, dirty: false };
-  function markDirty(){ app.dirty = true; } function markClean(){ app.dirty = false; }
-  window.addEventListener("beforeunload", function (e) { if (!app.dirty) return; e.preventDefault(); e.returnValue = ""; });
+  <section class="section-card d-none" id="evaluationSection">
+    <div class="d-flex align-items-center justify-content-between mb-2">
+      <h2 class="h5 mb-0">2) Valutazione</h2>
+      <div class="d-flex gap-2">
+        <button id="exportAllBtn" class="btn btn-outline-primary" type="button">Esporta tutto (JSON)</button>
+        <button id="exportAllPDFZipBtn" class="btn btn-outline-danger" type="button">Esporta PDF di tutti (ZIP)</button>
+        <button id="backToSetupBtn" class="btn btn-outline-secondary" type="button">← Torna alla configurazione</button>
+      </div>
+    </div>
 
-  function round2(x){ return Math.round((x + Number.EPSILON) * 100) / 100; }
-  function round1(x){ return Math.round((x + Number.EPSILON) * 10) / 10; }
-  function floor2(x){ return Math.floor((x + Number.EPSILON) * 100) / 100; }
-  function escapeHtml(str){
-    return String(str).replace(/[&<>"']/g, function(c){
-      return ({
-        "&": "&amp;",
-        "<": "&lt;",
-        ">": "&gt;",
-        "\"": "&quot;",
-        "'": "&#39;"
-      })[c];
-    });
-  }
+    <ul class="nav nav-tabs" id="studentsTabs" role="tablist"></ul>
+    <div class="tab-content" id="studentsTabContent"></div>
+  </section>
 
-  function parseStudentsText(text){
-    if (!text) return [];
-    const items = String(text).replace(/^\uFEFF/, "").split(/\r?\n|[;,|]/).map(s => s.trim()).filter(Boolean);
-    const seen = new Set(); const out = [];
-    for (const s of items){ const k=s.toLowerCase(); if(!seen.has(k)){ seen.add(k); out.push(s);} }
-    return out;
-  }
-  function renderStudentsPreview() {
-    if (!app.students.length) { $("#studentsPreview").html('<div class="text-muted">Nessuno studente caricato.</div>'); return; }
-    const list = app.students.map(s => '<span class="badge text-bg-light me-1 mb-1">' + escapeHtml(s) + '</span>').join("");
-    $("#studentsPreview").html('<div class="small">Caricati <strong>' + app.students.length + '</strong> studenti:</div><div class="mt-1">' + list + '</div>');
-  }
-
-  function nextIndicatorId(){ let maxId=0; $("#indicatorsTable tbody tr").each(function(){ const id=Number($(this).attr("data-ind-id"))||0; if(id>maxId) maxId=id; }); return maxId+1; }
-  function addIndicatorRow(name="", max="", id=null){
-    if (id == null) id = nextIndicatorId();
-    const row = $('<tr>\
-      <td><span class="badge text-bg-light id-badge">'+id+'</span></td>\
-      <td><input type="text" class="form-control indicator-name" placeholder="Es. Comprensione del testo" /></td>\
-      <td><input type="number" class="form-control indicator-max small-input" placeholder="Es. 2" min="0" step="0.1" /></td>\
-      <td class="text-end"><button type="button" class="btn btn-sm btn-outline-danger remove-indicator">Rimuovi</button></td>\
-    </tr>');
-    row.attr("data-ind-id", id);
-    row.find(".indicator-name").val(name); row.find(".indicator-max").val(max);
-    row.find(".remove-indicator").on("click", function(){ row.remove(); refreshExercisesIndicatorsColumns(); recalcSetupPreview(); markDirty(); });
-    $("#indicatorsTable tbody").append(row); row.on("input", "input", markDirty);
-  }
-  function getIndicatorsFromTable(){
-    const inds=[]; $("#indicatorsTable tbody tr").each(function(){
-      const id=Number($(this).attr("data-ind-id")); const name=$(this).find(".indicator-name").val().trim(); const max=parseFloat($(this).find(".indicator-max").val());
-      if (id && name && !isNaN(max)) inds.push({ id, name, max });
-    }); inds.sort((a,b)=>a.id-b.id); return inds;
-  }
-  function ensureExerciseRows(count){
-    const tbody=$("#exercisesTable tbody"); let current=tbody.children("tr").length;
-    while(current<count){
-      const newId=current+1; const tr=$('<tr>\
-        <td><span class="badge text-bg-light id-badge">'+newId+'</span></td>\
-        <td><input type="number" class="form-control ex-mod" step="0.1" value="0"/></td>\
-        <td class="ex-covers"></td>\
-        <td class="text-end"><button type="button" class="btn btn-sm btn-outline-danger remove-ex">Rimuovi</button></td>\
-      </tr>');
-      tr.attr("data-ex-id", newId);
-      tr.find(".remove-ex").on("click", function(){ tr.remove(); refreshExercisesIndicatorsColumns(); recalcSetupPreview(); markDirty(); });
-      tr.on("input", ".ex-mod", markDirty); tbody.append(tr); current++;
-    }
-    while(current>count){ tbody.children("tr").last().remove(); current--; markDirty(); }
-    refreshExercisesIndicatorsColumns(); recalcSetupPreview();
-  }
-  function refreshExercisesIndicatorsColumns(){
-    const inds=getIndicatorsFromTable();
-    $("#exercisesTable tbody tr").each(function(){
-      const $row=$(this); const exId=Number($row.attr("data-ex-id"));
-      const coversSet=new Set((app.exercises.find(e=>e.id===exId)?.covers||[]).map(Number));
-      const $cell=$row.find(".ex-covers").empty();
-      if(!inds.length){ $cell.html('<span class="text-muted">Aggiungi indicatori sopra…</span>'); return; }
-      inds.forEach(function(ind){
-        const domId="cover_"+ind.id+"_"+Math.random().toString(36).slice(2,7);
-        const $wrapper=$('<div>',{class:"form-check"});
-        const $input=$('<input>',{class:"form-check-input cover-ind",type:"checkbox",id:domId});
-        $input.attr("data-ind-id",ind.id); if(coversSet.has(ind.id)) $input.prop("checked",true);
-        const $label=$('<label>',{class:"form-check-label",for:domId, html:'<span class="text-muted me-2">'+ind.id+'</span>'+escapeHtml(ind.name)});
-        $input.on("change", function(){ recalcSetupPreview(); markDirty(); });
-        $wrapper.append($input,$label); $cell.append($wrapper);
-      });
-    });
-  }
-  function syncFromSetupTables(){
-    app.indicators=getIndicatorsFromTable();
-    const exercises=[]; $("#exercisesTable tbody tr").each(function(){
-      const id=Number($(this).attr("data-ex-id")); const modifier=parseFloat($(this).find(".ex-mod").val())||0; const covers=[];
-      $(this).find(".cover-ind").each(function(){ if($(this).is(":checked")) covers.push(Number($(this).attr("data-ind-id"))); });
-      exercises.push({id,modifier,covers});
-    }); exercises.sort((a,b)=>a.id-b.id); app.exercises=exercises;
-  }
-
-  function collectConfigOrThrow(){
-    if(!app.students.length) throw new Error("Carica almeno uno studente.");
-    app.indicators=getIndicatorsFromTable(); if(!app.indicators.length) throw new Error("Definisci almeno un indicatore.");
-    syncFromSetupTables(); if(!app.exercises.length) throw new Error("Definisci almeno un esercizio.");
-  }
-  function levelToCoef(i){ if(i==null||isNaN(i))return null; const idx=Number(i); if(idx<0||idx>4)return null; return LEVELS[idx].coef; }
-  function coverageCountForIndicatorById(id){ let c=0; app.exercises.forEach(ex=>{ if((ex.covers||[]).includes(id)) c++; }); return c; }
-  function getSavedLevel(s,e,i){ const S=app.resultsMap[s]; if(!S) return null; const E=S[e]; if(!E) return null; return E[i]??null; }
-  function setSavedLevel(s,e,i,l){ app.resultsMap[s]=app.resultsMap[s]||{}; app.resultsMap[s][e]=app.resultsMap[s][e]||{};
-    if(l===""||l==null){ delete app.resultsMap[s][e][i]; } else { app.resultsMap[s][e][i]=Number(l); } markDirty(); }
-  function calcCellScore(id,level){ const c=levelToCoef(level); if(c==null) return 0; const ind=app.indicators.find(x=>x.id===id); if(!ind) return 0; return ind.max*c; }
-  function calcExerciseScoreForStudent(stu,exIdx){
-    const ex=app.exercises[exIdx]; if(!ex) return 0; let sum=0;
-    (ex.covers||[]).forEach(function(indId){ const level=getSavedLevel(stu,ex.id,indId); const cell=calcCellScore(indId,level);
-      const cov=coverageCountForIndicatorById(indId)||1; sum+=(cell/cov); });
-    const total=sum+(ex.modifier||0); return round1(total);
-  }
-  function calcExerciseMaxScore(exIdx){
-    const ex=app.exercises[exIdx]; if(!ex) return 0; let sum=0;
-    (ex.covers||[]).forEach(function(indId){ const ind=app.indicators.find(i=>i.id===indId); if(!ind) return;
-      const cov=coverageCountForIndicatorById(indId)||1; sum+=((ind.max*1.0)/cov); });
-    const total=sum+(ex.modifier||0); return round1(total);
-  }
-  function calcIndicatorMeanForStudent(stu,indId){
-    const idxs=app.exercises.map((e,i)=>(e.covers||[]).includes(indId)?i:-1).filter(i=>i>=0); if(!idxs.length) return 0;
-    let sum=0; idxs.forEach(function(exIdx){ const ex=app.exercises[exIdx]; const level=getSavedLevel(stu,ex.id,indId); sum+=calcCellScore(indId,level); });
-    return round2(sum/idxs.length);
-  }
-  function calcTotalForStudent(stu){ let t=0; app.exercises.forEach(function(_,i){ t+=calcExerciseScoreForStudent(stu,i); }); return round1(t); }
-
-  function renderEvaluation(){
-    $("#studentsTabs").empty(); $("#studentsTabContent").empty();
-
-    app.students.forEach(function(stu,sIdx){
-      const tabId="tab-"+sIdx, paneId="pane-"+sIdx, isActive=sIdx===0?'active':'', isShow=sIdx===0?'show active':'';
-      $("#studentsTabs").append('<li class="nav-item" role="presentation">\
-      <button class="nav-link '+isActive+'" id="'+tabId+'" data-bs-toggle="tab" data-bs-target="#'+paneId+'" type="button" role="tab">'+escapeHtml(stu)+'</button>\
-    </li>');
-
-      const tableHtml = buildStudentTableHtml(stu);
-
-      $("#studentsTabContent").append('<div class="tab-pane fade '+isShow+'" id="'+paneId+'" role="tabpanel" aria-labelledby="'+tabId+'">\
-       <div class="toolbar d-flex justify-content-end">\
-         <button class="btn btn-sm btn-outline-danger" data-export-pdf="'+escapeHtml(stu)+'">Esporta PDF</button>\
-       </div>\
-       <div class="table-responsive">'+tableHtml+'</div>\
-     </div>');
-    });
-
-    $("select[data-cell-select]").on("change", function(){
-      const student = $(this).data("student");
-      const indId   = Number($(this).data("indicator"));
-      const exId    = Number($(this).data("exercise"));
-      const val     = $(this).val();
-      setSavedLevel(student, exId, indId, val === "" ? null : Number(val));
-      recalcForStudent(student);
-    });
-
-    $("[data-export-pdf]").on("click", function(){
-      const student = $(this).attr("data-export-pdf");
-      exportStudentPDF(student);
-    });
-
-    app.students.forEach(function(stu){ recalcForStudent(stu); });
-  }
-  function buildStudentTableHtml(student){
-    const exCount = app.exercises.length;
-    let thead = "<thead>";
-    thead += '<tr><th></th><th class="text-center" colspan="'+exCount+'">Esercizi</th><th class="text-center">Media</th></tr>';
-    thead += "<tr><th>Indicatore</th>";
-    app.exercises.forEach(function(ex){ thead += '<th class="text-center">'+ex.id+'</th>'; });
-    thead += '<th class="text-center">Media</th></tr></thead>';
-
-    let tbody = "<tbody>";
-    app.indicators.forEach(function(ind){
-      tbody += '<tr><td class="indicator-label">'+escapeHtml(ind.name)+'</td>';
-      app.exercises.forEach(function(ex){
-        if ((ex.covers||[]).includes(ind.id)){
-          const savedIdx = getSavedLevel(student, ex.id, ind.id);
-          tbody += '<td class="text-center">'+renderLevelSelect(student, ind.id, ex.id, savedIdx)+'</td>';
-        } else {
-          tbody += '<td class="cell-disabled">—</td>';
-        }
-      });
-      const mean = calcIndicatorMeanForStudent(student, ind.id);
-      const max  = app.indicators.find(function(i){ return i.id === ind.id; })?.max || 0;
-      tbody += '<td class="text-center"><span class="badge text-bg-light" data-ind-mean="'+escapeHtml(student)+'::'+ind.id+'">'+mean.toFixed(2)+'</span> / <span class="badge text-bg-light">'+(max.toFixed ? max.toFixed(1) : max)+'</span></td>';
-      tbody += "</tr>";
-    });
-
-    tbody += '<tr><td class="fw-semibold">Punteggio esercizio</td>';
-    app.exercises.forEach(function(ex, exIdx){
-      const v = calcExerciseScoreForStudent(student, exIdx).toFixed(1);
-      const max = calcExerciseMaxScore(exIdx).toFixed(1);
-      tbody += '<td class="text-center"><span class="badge text-bg-secondary" data-ex-score="'+escapeHtml(student)+'::'+exIdx+'">'+v+'</span> / <span class="badge text-bg-light" data-ex-max="'+escapeHtml(student)+'::'+exIdx+'">'+max+'</span></td>';
-    });
-    tbody += "<td></td></tr>";
-
-    tbody += "<tr>";
-    tbody += '<td class="fw-semibold text-end">Totale studente</td>';
-    for (let i=0; i<app.exercises.length; i++){ tbody += "<td></td>"; }
-    tbody += '<td class="text-end"><span class="badge text-bg-primary total-badge" data-stu-total-bottom="'+escapeHtml(student)+'">'+calcTotalForStudent(student).toFixed(1)+'</span></td>';
-    tbody += "</tr>";
-
-    tbody += "</tbody>";
-    return '<table class="table table-bordered table-sm align-middle">'+thead+tbody+"</table>";
-  }
-  function renderLevelSelect(student, indicatorId, exerciseId, savedIdx){
-    const $select=$('<select>', { class:'form-select form-select-sm', 'data-cell-select': '' });
-    $select.attr('data-student', student).attr('data-indicator', indicatorId).attr('data-exercise', exerciseId);
-    $select.append($('<option>', { value:'', text:'—' }));
-    for (let idx = 4; idx >= 0; idx--) {
-      const lvl = LEVELS[idx];
-      const $opt = $('<option>', { value: String(idx), text: lvl.label });
-      if (savedIdx === idx) $opt.attr('selected', 'selected');
-      $select.append($opt);
-    }
-    return $('<div>').append($select).html();
-  }
-  function recalcForStudent(student){
-    app.exercises.forEach(function(_, exIdx){
-      const v = calcExerciseScoreForStudent(student, exIdx);
-      const max = calcExerciseMaxScore(exIdx);
-      $('[data-ex-score="'+CSS.escape(student)+'::'+exIdx+'"]').text(v.toFixed(1));
-      $('[data-ex-max="'+CSS.escape(student)+'::'+exIdx+'"]').text(max.toFixed(1));
-    });
-    app.indicators.forEach(function(ind){
-      const m = calcIndicatorMeanForStudent(student, ind.id);
-      $('[data-ind-mean="'+CSS.escape(student)+'::'+ind.id+'"]').text(m.toFixed(2));
-    });
-    const tot = calcTotalForStudent(student);
-    $('[data-stu-total-bottom="'+CSS.escape(student)+'"]').text(tot.toFixed(1));
-  }
-
-  function toResultsArray(){
-    return app.students.map(function(stu){
-      const exArr = app.exercises.map(function(ex){
-        const indicators = (ex.covers||[]).map(function(indId){
-          const lvl = getSavedLevel(stu, ex.id, indId);
-          return { id: indId, level: (lvl==null? null : Number(lvl)) };
-        });
-        return { id: ex.id, indicators };
-      });
-      return { name: stu, exercises: exArr };
-    });
-  }
-  function exportConfigOnly(){
-    collectConfigOrThrow();
-    const payload = { version: "1.0", students: app.students, indicators: app.indicators, exercises: app.exercises.map(function(e){ return { id:e.id, modifier:e.modifier, covers:e.covers.slice() }; }) };
-    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
-    const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "configurazione_verifica.json"; a.click(); URL.revokeObjectURL(a.href);
-    markClean();
-  }
-  function exportAll(){
-    collectConfigOrThrow();
-    const payload = { version: "1.0", students: app.students, indicators: app.indicators, exercises: app.exercises.map(function(e){ return { id:e.id, modifier:e.modifier, covers:e.covers.slice() }; }), results: toResultsArray() };
-    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
-    const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "verifica_completa.json"; a.click(); URL.revokeObjectURL(a.href);
-    markClean();
-  }
-  function buildResultsMapFromArray(resultsArray){
-    app.resultsMap = {};
-    (resultsArray || []).forEach(function(stuObj){
-      const stu = stuObj.name; if (!stu) return;
-      app.resultsMap[stu] = app.resultsMap[stu] || {};
-      (stuObj.exercises || []).forEach(function(exObj){
-        const exId = Number(exObj.id); if (!exId) return;
-        app.resultsMap[stu][exId] = app.resultsMap[stu][exId] || {};
-        (exObj.indicators || []).forEach(function(indEntry){
-          const indId = Number(indEntry.id);
-          if (!indId && indId !== 0) return;
-          const lvl = (indEntry.level == null ? null : Number(indEntry.level));
-          if (lvl != null && (lvl < 0 || lvl > 4)) return;
-          app.resultsMap[stu][exId][indId] = lvl;
-        });
-      });
-    });
-  }
-  function importAnyFromFile(file){
-    const reader = new FileReader();
-    reader.onload = function(e){
-      try {
-        const data = JSON.parse(e.target.result);
-        if (data.version !== "1.0") throw new Error("Versione non supportata (attesa 1.0).");
-        app.students   = Array.isArray(data.students) ? data.students.slice() : [];
-        app.indicators = (Array.isArray(data.indicators) ? data.indicators.slice() : []).map(function(ind){ return { id:Number(ind.id), name: ind.name, max: Number(ind.max) }; });
-        app.indicators.sort(function(a,b){ return a.id-b.id; });
-        app.exercises  = (Array.isArray(data.exercises) ? data.exercises.slice() : []).map(function(ex){ return { id:Number(ex.id), modifier:Number(ex.modifier)||0, covers:(ex.covers||[]).map(Number) }; });
-        app.exercises.sort(function(a,b){ return a.id-b.id; });
-
-        $("#indicatorsTable tbody").empty();
-        app.indicators.forEach(function(ind){ addIndicatorRow(ind.name, ind.max, ind.id); });
-
-        ensureExerciseRows(app.exercises.length || Number($("#exerciseCount").val())||0);
-        $("#exercisesTable tbody tr").each(function(i){
-          const ex = app.exercises[i];
-          if (!ex) return;
-          $(this).attr("data-ex-id", ex.id);
-          $(this).find(".id-badge").text(ex.id);
-          $(this).find(".ex-mod").val(ex.modifier || 0);
-        });
-
-        refreshExercisesIndicatorsColumns();
-        renderStudentsPreview();
-        recalcSetupPreview();
-        buildResultsMapFromArray(data.results || []);
-        const hasResults = Array.isArray(data.results) && data.results.length>0;
-
-        if (hasResults){
-          $("#setupSection").addClass("d-none");
-          $("#evaluationSection").removeClass("d-none");
-          renderEvaluation();
-        } else {
-          $("#evaluationSection").addClass("d-none");
-          $("#setupSection").removeClass("d-none");
-        }
-
-        alert(hasResults ? "Verifica completa importata." : "Configurazione importata.");
-        markClean();
-      } catch(err){
-        console.error(err);
-        alert("Errore nell'importazione: " + err.message);
-      }
-    };
-    reader.readAsText(file);
-  }
-
-  function exportStudentPDF(student){
-    const exIds = app.exercises.map(function(e){ return e.id; });
-    const head = [['Indicatore'].concat(exIds.map(function(id){ return String(id); })).concat(['Media'])];
-    const body = [];
-    app.indicators.forEach(function(ind){
-      const row = [];
-      row.push(ind.name);
-      app.exercises.forEach(function(ex){
-        if ((ex.covers||[]).includes(ind.id)){
-          const levelIdx = getSavedLevel(student, ex.id, ind.id);
-          const levelLabel = (levelIdx==null) ? '—' : LEVELS[levelIdx].label;
-          const rawScore = calcCellScore(ind.id, levelIdx);
-          const cellTxt = (levelIdx==null) ? '—' : (levelLabel + '\n' + floor2(rawScore).toFixed(2));
-          row.push(cellTxt);
-        } else {
-          row.push('—');
-        }
-      });
-      const mean = calcIndicatorMeanForStudent(student, ind.id);
-      const max  = app.indicators.find(function(i){ return i.id === ind.id; })?.max || 0;
-      row.push(mean.toFixed(2) + ' / ' + (max.toFixed ? max.toFixed(1) : max));
-      body.push(row);
-    });
-
-    const jsPDFRef = window.jspdf;
-    const doc = new jsPDFRef.jsPDF({ unit: 'pt', format: 'a4' });
-    const pageWidth = doc.internal.pageSize.getWidth();
-
-    doc.setFontSize(14);
-    doc.text('Griglia di valutazione - ' + student, 40, 40);
-    doc.setFontSize(10);
-    const today = new Date();
-    doc.text('Generato il ' + today.toLocaleDateString(), pageWidth - 180, 40);
-
-    doc.autoTable({
-      head: head,
-      body: body,
-      startY: 60,
-      styles: { fontSize: 9, cellPadding: 4, halign: 'center', valign: 'middle' },
-      headStyles: { fillColor: [66, 66, 66], textColor: 255 },
-      columnStyles: { 0: { halign: 'left', cellWidth: 180 } }
-    });
-
-    doc.save(student + '_griglia.pdf');
-  }
-
-  $(function(){
-    function loadStudentsFromFile(file){
-      const reader=new FileReader();
-      reader.onload=function(e){
-        const text=String(e.target.result||"");
-        const list=parseStudentsText(text);
-        app.students=list; renderStudentsPreview();
-        if(!list.length) alert("Nessun nome valido trovato nel file.");
-        markDirty();
-      };
-      reader.readAsText(file);
-    }
-    $("#studentFile").on("change", function(){ const file=this.files[0]; if(file) loadStudentsFromFile(file); });
-    const drop=document.getElementById("studentsDrop");
-    ["dragenter","dragover"].forEach(function(evt){ drop.addEventListener(evt,function(e){ e.preventDefault(); e.stopPropagation(); drop.classList.add("dragover"); }); });
-    ["dragleave","drop"].forEach(function(evt){ drop.addEventListener(evt,function(e){ e.preventDefault(); e.stopPropagation(); drop.classList.remove("dragover"); }); });
-    drop.addEventListener("drop",function(e){ const file=e.dataTransfer.files&&e.dataTransfer.files[0]; if(file){ $("#studentFile")[0].files=e.dataTransfer.files; const changeEvt=new Event("change"); $("#studentFile")[0].dispatchEvent(changeEvt);} });
-
-    $("#parseStudentsPasteBtn").on("click", function(){ const text=$("#studentsPaste").val(); const list=parseStudentsText(text); app.students=list; renderStudentsPreview(); if(!list.length) alert("Nessun nome valido nel testo incollato."); markDirty(); });
-    $("#clearStudentsBtn").on("click", function(){ app.students=[]; renderStudentsPreview(); $("#studentFile").val(""); $("#studentsPaste").val(""); markDirty(); });
-
-    $("#addIndicatorRow").on("click", function(){ addIndicatorRow(); refreshExercisesIndicatorsColumns(); recalcSetupPreview(); markDirty(); });
-    $("#indicatorsTable").on("input",".indicator-name, .indicator-max", function(){ refreshExercisesIndicatorsColumns(); recalcSetupPreview(); markDirty(); });
-
-    $("#generateExercisesBtn").on("click", function(){ const n=parseInt($("#exerciseCount").val(),10)||0; ensureExerciseRows(n); markDirty(); });
-    $("#exercisesTable").on("input",".ex-mod", function(){ recalcSetupPreview(); markDirty(); });
-    $("#exercisesTable").on("change",".cover-ind", function(){ recalcSetupPreview(); markDirty(); });
-
-    $("#startEvalBtn").on("click", function(){ try{ collectConfigOrThrow(); $("#setupSection").addClass("d-none"); $("#evaluationSection").removeClass("d-none"); renderEvaluation(); } catch(err){ alert(err.message); } });
-    $("#backToSetupBtn").on("click", function(){ $("#evaluationSection").addClass("d-none"); $("#setupSection").removeClass("d-none"); recalcSetupPreview(); });
-
-    $("#exportConfigOnlyBtn").on("click", exportConfigOnly);
-    $("#exportAllBtn").on("click", exportAll);
-    $("#importFile").on("change", function(){ const file=this.files[0]; if(file) importAnyFromFile(file); this.value=""; });
-  });
-  function recalcSetupPreview(){
-    syncFromSetupTables();
-    const coverageMap={}; app.indicators.forEach(function(ind){ coverageMap[ind.id]=0; });
-    app.exercises.forEach(function(ex){ (ex.covers||[]).forEach(function(id){ if(coverageMap.hasOwnProperty(id)) coverageMap[id]+=1; }); });
-    let total=0; app.exercises.forEach(function(ex,exIdx){ const exMax=calcExerciseMaxScore(exIdx); total+=exMax; });
-    total=round1(total);
-    const uncovered=Object.keys(coverageMap).filter(function(k){ return coverageMap[k]===0; }).map(function(id){
-      const f=app.indicators.find(function(i){ return i.id===Number(id); }); return f?(f.name+' (id '+f.id+')'):('id '+id);
-    });
-    document.querySelector('[data-setup-total]').textContent = total.toFixed(1);
-    const delta = round1(10 - total);
-    const deltaTxt = (delta>0?'+':'') + delta.toFixed(1);
-    document.querySelector('[data-setup-delta]').textContent = deltaTxt;
-    const warnBox = document.getElementById('coverageWarnings');
-    if (uncovered.length){ warnBox.innerHTML = '<div class="alert alert-warning py-2 mb-0"><strong>Attenzione:</strong> indicatori non coperti: '+uncovered.map(escapeHtml).join(', ')+'.</div>'; }
-    else { warnBox.innerHTML = ''; }
-  }
-</script>
+  <script src="./assets/js/utils.js"></script>
+  <script src="./assets/js/state.js"></script>
+  <script src="./assets/js/setup.js"></script>
+  <script src="./assets/js/evaluation.js"></script>
+  <script src="./assets/js/storage.js"></script>
+  <script src="./assets/js/pdf.js"></script>
+  <script src="./assets/js/main.js"></script>
 </body>
 </html>

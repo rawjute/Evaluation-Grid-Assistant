@@ -172,7 +172,14 @@
 
     // Spazio e legenda
     const _tableY = doc.lastAutoTable.finalY || 60;
-    const _legendTop = _tableY + 28;
+    const noteText = "la valutazione fa riferimento all'eventuale pdp redatto dal consiglio di classe";
+    const noteY = _tableY + 16;
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    const noteLines = doc.splitTextToSize(noteText, 515);
+    doc.text(noteLines, 40, noteY);
+
+    const _legendTop = noteY + (noteLines.length > 1 ? ((noteLines.length - 1) * 12) : 0) + 12;
     doc.setFont('helvetica', 'bold'); doc.setFontSize(10);
     doc.text('Legenda fasce', 40, _legendTop);
     doc.setFont('helvetica', 'normal'); doc.setFontSize(9);

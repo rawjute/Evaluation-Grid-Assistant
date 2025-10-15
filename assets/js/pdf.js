@@ -172,7 +172,7 @@
 
     // Spazio e legenda
     const _tableY = doc.lastAutoTable.finalY || 60;
-    const noteText = "la valutazione fa riferimento all'eventuale pdp redatto dal consiglio di classe";
+    const noteText = "La valutazione fa riferimento all'eventuale pdp redatto dal consiglio di classe";
     const noteY = _tableY + 24;
     const noteLineSpacing = 12;
     doc.setFont('helvetica', 'bold');

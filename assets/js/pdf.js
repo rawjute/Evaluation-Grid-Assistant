@@ -20,7 +20,22 @@
 
     // Titolo
     doc.setFontSize(14);
-    doc.text('Griglia di valutazione - ' + student, 40, 40);
+    let cursorY = 40;
+    doc.text('Griglia di valutazione - ' + student, 40, cursorY);
+    cursorY += 18;
+
+    // Informazioni prova
+    const meta = VA.app.meta || {};
+    const metaLines = [];
+    if(meta.subject) metaLines.push('Materia: ' + meta.subject);
+    if(meta.examName) metaLines.push('Verifica: ' + meta.examName);
+    if(meta.date){ const formatted = VA.formatDateForDisplay(meta.date); metaLines.push('Data: ' + formatted); }
+    if(meta.classRoom) metaLines.push('Classe: ' + meta.classRoom);
+    if(metaLines.length){
+      doc.setFontSize(10);
+      metaLines.forEach(function(line){ doc.text(line, 40, cursorY); cursorY += 14; });
+    }
+    const tableStartY = Math.max(cursorY + 8, 60);
 
     // Header a due righe
     const exIds = VA.app.exercises.map(function(e){ return e.id; });
@@ -89,7 +104,7 @@
     doc.autoTable({
       head: head,
       body: body,
-      startY: 60,
+      startY: tableStartY,
       styles: {
         font: 'helvetica',
         fontSize: 8,

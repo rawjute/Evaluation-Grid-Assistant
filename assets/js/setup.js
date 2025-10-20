@@ -44,7 +44,8 @@
       tr.on("input", ".ex-mod", VA.markDirty); tbody.append(tr); current++;
     }
     while(current>count){ tbody.children("tr").last().remove(); current--; VA.markDirty(); }
-    VA.refreshExercisesIndicatorsColumns(); VA.recalcSetupPreview();
+    VA.refreshExercisesIndicatorsColumns();
+    VA.recalcSetupPreview();
   };
   VA.refreshExercisesIndicatorsColumns = function(){
     const inds=VA.getIndicatorsFromTable();

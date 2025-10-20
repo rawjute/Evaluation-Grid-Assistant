@@ -54,17 +54,18 @@
         VA.app.students   = Array.isArray(data.students) ? data.students.slice() : [];
         VA.app.indicators = (Array.isArray(data.indicators) ? data.indicators.slice() : []).map(function(ind){ return { id:Number(ind.id), name: ind.name, max: Number(ind.max) }; });
         VA.app.indicators.sort(function(a,b){ return a.id-b.id; });
-        VA.app.exercises  = (Array.isArray(data.exercises) ? data.exercises.slice() : []).map(function(ex){ return { id:Number(ex.id), modifier:Number(ex.modifier)||0, covers:(ex.covers||[]).map(Number) }; });
-        VA.app.exercises.sort(function(a,b){ return a.id-b.id; });
+        const importedExercises = (Array.isArray(data.exercises) ? data.exercises.slice() : []).map(function(ex){ return { id:Number(ex.id), modifier:Number(ex.modifier)||0, covers:(ex.covers||[]).map(Number) }; });
+        importedExercises.sort(function(a,b){ return a.id-b.id; });
         $("#indicatorsTable tbody").empty();
         VA.app.indicators.forEach(function(ind){ VA.addIndicatorRow(ind.name, ind.max, ind.id); });
-        VA.ensureExerciseRows(VA.app.exercises.length || Number($("#exerciseCount").val())||0);
+        VA.ensureExerciseRows(importedExercises.length || Number($("#exerciseCount").val())||0);
         $("#exercisesTable tbody tr").each(function(i){
-          const ex = VA.app.exercises[i]; if (!ex) return;
+          const ex = importedExercises[i]; if (!ex) return;
           $(this).attr("data-ex-id", ex.id);
           $(this).find(".id-badge").text(ex.id);
           $(this).find(".ex-mod").val(ex.modifier || 0);
         });
+        VA.app.exercises = importedExercises.slice();
         VA.refreshExercisesIndicatorsColumns();
         VA.renderStudentsPreview();
         VA.recalcSetupPreview();

@@ -10,6 +10,24 @@
     const list = VA.app.students.map(s => '<span class="badge text-bg-light me-1 mb-1">' + VA.escapeHtml(s) + '</span>').join("");
     $("#studentsPreview").html('<div class="small">Caricati <strong>' + VA.app.students.length + '</strong> studenti:</div><div class="mt-1">' + list + '</div>');
   };
+  VA.getMetaFromInputs = function(){
+    return {
+      subject: String($("#metaSubject").val() || "").trim(),
+      examName: String($("#metaExamName").val() || "").trim(),
+      date: String($("#metaDate").val() || "").trim(),
+      classRoom: String($("#metaClass").val() || "").trim()
+    };
+  };
+  VA.applyMetaToInputs = function(meta){
+    const data = meta || VA.app.meta || {};
+    $("#metaSubject").val(data.subject || "");
+    $("#metaExamName").val(data.examName || "");
+    $("#metaDate").val(data.date || "");
+    $("#metaClass").val(data.classRoom || "");
+  };
+  VA.syncMetaFromInputs = function(){
+    VA.app.meta = VA.getMetaFromInputs();
+  };
   function nextIndicatorId(){ let maxId=0; $("#indicatorsTable tbody tr").each(function(){ const id=Number($(this).attr("data-ind-id"))||0; if(id>maxId) maxId=id; }); return maxId+1; }
   VA.addIndicatorRow = function(name="", max="", id=null){
     if (id == null) id = nextIndicatorId();
@@ -99,6 +117,12 @@
     else { warnBox.innerHTML = ''; }
   };
   VA.collectConfigOrThrow = function(){
+    VA.syncMetaFromInputs();
+    const meta = VA.app.meta || {};
+    if(!meta.subject) throw new Error("Inserisci la materia della verifica.");
+    if(!meta.examName) throw new Error("Inserisci il nome della verifica.");
+    if(!meta.date) throw new Error("Inserisci la data della verifica.");
+    if(!meta.classRoom) throw new Error("Inserisci la classe della verifica.");
     if(!VA.app.students.length) throw new Error("Carica almeno uno studente.");
     VA.app.indicators=VA.getIndicatorsFromTable(); if(!VA.app.indicators.length) throw new Error("Definisci almeno un indicatore.");
     VA.syncFromSetupTables(); if(!VA.app.exercises.length) throw new Error("Definisci almeno un esercizio.");

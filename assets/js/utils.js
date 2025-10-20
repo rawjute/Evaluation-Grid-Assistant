@@ -16,4 +16,12 @@
       return ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", "\"":"&quot;", "'":"&#39;" })[c];
     });
   };
+  VA.formatDateForDisplay = function(isoDate){
+    if(!isoDate) return '';
+    const parts = String(isoDate).split('-');
+    if(parts.length !== 3) return isoDate;
+    const [year, month, day] = parts;
+    if(!year || !month || !day) return isoDate;
+    return day.padStart(2,'0') + '/' + month.padStart(2,'0') + '/' + year;
+  };
 })(window);

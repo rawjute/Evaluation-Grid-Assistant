@@ -5,6 +5,20 @@
   function setSavedLevel(s,e,i,l){ VA.app.resultsMap[s]=VA.app.resultsMap[s]||{}; VA.app.resultsMap[s][e]=VA.app.resultsMap[s][e]||{};
     if(l===""||l==null){ delete VA.app.resultsMap[s][e][i]; } else { VA.app.resultsMap[s][e][i]=Number(l); } VA.markDirty(); }
   function calcCellScore(id,level){ const c=VA.levelToCoef(level); if(c==null) return 0; const ind=VA.app.indicators.find(x=>x.id===id); if(!ind) return 0; return ind.max*c; }
+  function renderMetaSummary(){
+    const meta = VA.app.meta || {};
+    const parts = [];
+    if(meta.subject) parts.push('<strong>Materia:</strong> ' + VA.escapeHtml(meta.subject));
+    if(meta.examName) parts.push('<strong>Verifica:</strong> ' + VA.escapeHtml(meta.examName));
+    if(meta.date){ const formatted = VA.formatDateForDisplay(meta.date); parts.push('<strong>Data:</strong> ' + VA.escapeHtml(formatted)); }
+    if(meta.classRoom) parts.push('<strong>Classe:</strong> ' + VA.escapeHtml(meta.classRoom));
+    const $box = $("#evaluationMeta");
+    if(!$box.length) return;
+    if(!parts.length){ $box.addClass('d-none').empty(); return; }
+    const separator = '<span class="mx-2 text-muted">•</span>';
+    $box.html(parts.join(separator)).removeClass('d-none');
+  }
+  VA.renderEvaluationMeta = renderMetaSummary;
   VA.calcExerciseScoreForStudent = function(stu,exIdx){
     const ex=VA.app.exercises[exIdx]; if(!ex) return 0; let sum=0;
     (ex.covers||[]).forEach(function(indId){ const level=getSavedLevel(stu,ex.id,indId); const cell=calcCellScore(indId,level);
@@ -65,6 +79,7 @@
   }
   VA.renderEvaluation = function(){
     $("#studentsTabs").empty(); $("#studentsTabContent").empty();
+    renderMetaSummary();
     VA.app.students.forEach(function(stu,sIdx){
       const tabId="tab-"+sIdx, paneId="pane-"+sIdx, isActive=sIdx===0?'active':'', isShow=sIdx===0?'show active':'';
       $("#studentsTabs").append('<li class="nav-item" role="presentation">\

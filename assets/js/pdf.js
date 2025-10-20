@@ -15,22 +15,7 @@
 
     // Titolo
     doc.setFontSize(14);
-    let cursorY = 40;
-    doc.text('Griglia di valutazione - ' + student, 40, cursorY);
-    cursorY += 18;
-
-    // Informazioni prova
-    const meta = VA.app.meta || {};
-    const metaLines = [];
-    if(meta.subject) metaLines.push('Materia: ' + meta.subject);
-    if(meta.examName) metaLines.push('Verifica: ' + meta.examName);
-    if(meta.date){ const formatted = VA.formatDateForDisplay(meta.date); metaLines.push('Data: ' + formatted); }
-    if(meta.classRoom) metaLines.push('Classe: ' + meta.classRoom);
-    if(metaLines.length){
-      doc.setFontSize(10);
-      metaLines.forEach(function(line){ doc.text(line, 40, cursorY); cursorY += 14; });
-    }
-    const tableStartY = Math.max(cursorY + 8, 60);
+    doc.text('Griglia di valutazione - ' + student, 40, 40);
 
     // Header a due righe
     const exIds = VA.app.exercises.map(function(e){ return e.id; });
@@ -105,7 +90,7 @@
     doc.autoTable({
       head: head,
       body: body,
-      startY: tableStartY,
+      startY: 60,
       styles: {
         font: 'helvetica',
         fontSize: 8,
@@ -173,16 +158,7 @@
 
     // Spazio e legenda
     const _tableY = doc.lastAutoTable.finalY || 60;
-    const noteText = "La valutazione fa riferimento all'eventuale pdp redatto dal consiglio di classe";
-    const noteY = _tableY + 24;
-    const noteLineSpacing = 12;
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(9);
-    const noteLines = doc.splitTextToSize(noteText, 515);
-    doc.text(noteLines, 40, noteY, { lineHeightFactor: 1.4 });
-
-    const noteHeight = noteLines.length > 1 ? (noteLines.length - 1) * noteLineSpacing : 0;
-    const _legendTop = noteY + noteHeight + 24;
+    const _legendTop = _tableY + 28;
     doc.setFont('helvetica', 'bold'); doc.setFontSize(10);
     doc.text('Legenda fasce', 40, _legendTop);
     doc.setFont('helvetica', 'normal'); doc.setFontSize(9);

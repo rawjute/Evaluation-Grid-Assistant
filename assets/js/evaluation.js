@@ -75,7 +75,6 @@
   }
   VA.renderEvaluation = function(){
     $("#studentsTabs").empty(); $("#studentsTabContent").empty();
-    renderMetaSummary();
     VA.app.students.forEach(function(stu,sIdx){
       const tabId="tab-"+sIdx, paneId="pane-"+sIdx, isActive=sIdx===0?'active':'', isShow=sIdx===0?'show active':'';
       $("#studentsTabs").append('<li class="nav-item" role="presentation">\

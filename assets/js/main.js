@@ -2,6 +2,12 @@
   'use strict';
   const VA = global.VA;
   $(function(){
+    VA.applyMetaToInputs();
+    VA.syncMetaFromInputs();
+    $("[data-meta-field]").on("input change", function(){
+      VA.syncMetaFromInputs();
+      VA.markDirty();
+    });
     function loadStudentsFromFile(file){
       const reader=new FileReader();
       reader.onload=function(e){

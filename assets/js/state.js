@@ -1,14 +1,7 @@
 (function(global){
   'use strict';
   const VA = global.VA = (global.VA||{});
-  VA.app = {
-    students: [],
-    indicators: [],
-    exercises: [],
-    resultsMap: {},
-    dirty: false,
-    meta: { subject: '', examName: '', date: '', classRoom: '' }
-  };
+  VA.app = { students: [], indicators: [], exercises: [], resultsMap: {}, dirty: false };
   VA.markDirty = function(){ VA.app.dirty = true; };
   VA.markClean = function(){ VA.app.dirty = false; };
   window.addEventListener("beforeunload", function (e) { if (!VA.app.dirty) return; e.preventDefault(); e.returnValue = ""; });

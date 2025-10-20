@@ -10,24 +10,6 @@
     const list = VA.app.students.map(s => '<span class="badge text-bg-light me-1 mb-1">' + VA.escapeHtml(s) + '</span>').join("");
     $("#studentsPreview").html('<div class="small">Caricati <strong>' + VA.app.students.length + '</strong> studenti:</div><div class="mt-1">' + list + '</div>');
   };
-  VA.getMetaFromInputs = function(){
-    return {
-      subject: String($("#metaSubject").val() || "").trim(),
-      examName: String($("#metaExamName").val() || "").trim(),
-      date: String($("#metaDate").val() || "").trim(),
-      classRoom: String($("#metaClass").val() || "").trim()
-    };
-  };
-  VA.applyMetaToInputs = function(meta){
-    const data = meta || VA.app.meta || {};
-    $("#metaSubject").val(data.subject || "");
-    $("#metaExamName").val(data.examName || "");
-    $("#metaDate").val(data.date || "");
-    $("#metaClass").val(data.classRoom || "");
-  };
-  VA.syncMetaFromInputs = function(){
-    VA.app.meta = VA.getMetaFromInputs();
-  };
   function nextIndicatorId(){ let maxId=0; $("#indicatorsTable tbody tr").each(function(){ const id=Number($(this).attr("data-ind-id"))||0; if(id>maxId) maxId=id; }); return maxId+1; }
   VA.addIndicatorRow = function(name="", max="", id=null){
     if (id == null) id = nextIndicatorId();
@@ -62,7 +44,8 @@
       tr.on("input", ".ex-mod", VA.markDirty); tbody.append(tr); current++;
     }
     while(current>count){ tbody.children("tr").last().remove(); current--; VA.markDirty(); }
-    VA.refreshExercisesIndicatorsColumns(); VA.recalcSetupPreview();
+    VA.refreshExercisesIndicatorsColumns();
+    VA.recalcSetupPreview();
   };
   VA.refreshExercisesIndicatorsColumns = function(){
     const inds=VA.getIndicatorsFromTable();
@@ -91,13 +74,58 @@
     }); exercises.sort((a,b)=>a.id-b.id); VA.app.exercises=exercises;
   };
   VA.coverageCountForIndicatorById = function(id){ let c=0; VA.app.exercises.forEach(ex=>{ if((ex.covers||[]).includes(id)) c++; }); return c; };
-  VA.calcExerciseMaxScore = function(exIdx){
-    const ex=VA.app.exercises[exIdx]; if(!ex) return 0; let sum=0;
-    (ex.covers||[]).forEach(function(indId){
-      const ind=VA.app.indicators.find(i=>i.id===indId); if(!ind) return;
-      const cov=VA.coverageCountForIndicatorById(indId)||1; sum+=((ind.max*1.0)/cov);
+  function computeExerciseDistribution(exIdx){
+    const ex = VA.app.exercises[exIdx];
+    if (!ex) return {};
+    const covers = Array.isArray(ex.covers) ? ex.covers : [];
+    if (!covers.length) return {};
+    const entries = [];
+    let baseSum = 0;
+    covers.forEach(function(indId){
+      const ind = VA.app.indicators.find(i=>i.id===indId);
+      if (!ind) return;
+      const cov = VA.coverageCountForIndicatorById(indId) || 1;
+      const base = ind.max / cov;
+      entries.push({ indId, base });
+      baseSum += base;
     });
-    const total=sum+(ex.modifier||0); return VA.round1(total);
+    if (!entries.length) return {};
+    const modifier = Number(ex.modifier) || 0;
+    const distribution = {};
+    entries.forEach(function(entry){
+      const weight = baseSum > 0 ? (entry.base / baseSum) : (1 / entries.length);
+      const totalShare = entry.base + (modifier * weight);
+      const perLevel = VA.LEVELS.map(function(level){ return totalShare * level.coef; });
+      distribution[entry.indId] = { total: totalShare, levels: perLevel };
+    });
+    return distribution;
+  }
+
+  VA.getExerciseDistribution = function(exIdx){
+    return computeExerciseDistribution(exIdx);
+  };
+
+  VA.calcExerciseMaxScore = function(exIdx){
+    const ex = VA.app.exercises[exIdx];
+    if (!ex) return 0;
+    const distribution = computeExerciseDistribution(exIdx);
+    let sum = 0;
+    (ex.covers || []).forEach(function(indId){
+      const dist = distribution[indId];
+      if (!dist) return;
+      sum += dist.levels[4] || 0;
+    });
+    return VA.round1(sum);
+  };
+
+  VA.calcExerciseCellScore = function(exIdx, indId, levelIdx, distribution){
+    const dist = distribution || computeExerciseDistribution(exIdx);
+    if (levelIdx == null) return 0;
+    const idx = Number(levelIdx);
+    if (Number.isNaN(idx) || idx < 0 || idx >= VA.LEVELS.length) return 0;
+    const share = dist[indId];
+    if (!share || !Array.isArray(share.levels)) return 0;
+    return share.levels[idx] || 0;
   };
   VA.recalcSetupPreview = function(){
     VA.syncFromSetupTables();
@@ -116,12 +144,6 @@
     else { warnBox.innerHTML = ''; }
   };
   VA.collectConfigOrThrow = function(){
-    VA.syncMetaFromInputs();
-    const meta = VA.app.meta || {};
-    if(!meta.subject) throw new Error("Inserisci la materia della verifica.");
-    if(!meta.examName) throw new Error("Inserisci il nome della verifica.");
-    if(!meta.date) throw new Error("Inserisci la data della verifica.");
-    if(!meta.classRoom) throw new Error("Inserisci la classe della verifica.");
     if(!VA.app.students.length) throw new Error("Carica almeno uno studente.");
     VA.app.indicators=VA.getIndicatorsFromTable(); if(!VA.app.indicators.length) throw new Error("Definisci almeno un indicatore.");
     VA.syncFromSetupTables(); if(!VA.app.exercises.length) throw new Error("Definisci almeno un esercizio.");

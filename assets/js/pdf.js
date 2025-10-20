@@ -2,13 +2,8 @@
   'use strict';
   const VA = global.VA;
 
-  function cellScoreDivided(indicatorId, levelIdx){
-    const coef = (levelIdx==null ? null : VA.LEVELS[levelIdx].coef);
-    const indObj = VA.app.indicators.find(i=>i.id===indicatorId);
-    if (!indObj || coef==null) return 0;
-    const raw = indObj.max * coef;
-    const cov = VA.coverageCountForIndicatorById(indicatorId) || 1;
-    return raw / cov;
+  function cellScoreDivided(exIdx, indicatorId, levelIdx, distribution){
+    return VA.calcExerciseCellScore(exIdx, indicatorId, levelIdx, distribution);
   }
 
   async function buildStudentPDFDoc(student){
@@ -20,22 +15,7 @@
 
     // Titolo
     doc.setFontSize(14);
-    let cursorY = 40;
-    doc.text('Griglia di valutazione - ' + student, 40, cursorY);
-    cursorY += 18;
-
-    // Informazioni prova
-    const meta = VA.app.meta || {};
-    const metaLines = [];
-    if(meta.subject) metaLines.push('Materia: ' + meta.subject);
-    if(meta.examName) metaLines.push('Verifica: ' + meta.examName);
-    if(meta.date){ const formatted = VA.formatDateForDisplay(meta.date); metaLines.push('Data: ' + formatted); }
-    if(meta.classRoom) metaLines.push('Classe: ' + meta.classRoom);
-    if(metaLines.length){
-      doc.setFontSize(10);
-      metaLines.forEach(function(line){ doc.text(line, 40, cursorY); cursorY += 14; });
-    }
-    const tableStartY = Math.max(cursorY + 8, 60);
+    doc.text('Griglia di valutazione - ' + student, 40, 40);
 
     // Header a due righe
     const exIds = VA.app.exercises.map(function(e){ return e.id; });
@@ -50,15 +30,17 @@
     const body = [];
 
     // Righe per indicatore
+    const exerciseDistributions = VA.app.exercises.map(function(_, idx){ return VA.getExerciseDistribution(idx); });
+
     VA.app.indicators.forEach(function(ind){
       const row = [];
       row.push(ind.name);
-      VA.app.exercises.forEach(function(ex){
+      VA.app.exercises.forEach(function(ex, exIdx){
         if ((ex.covers||[]).includes(ind.id)){
           const S=VA.app.resultsMap[student]; const E=S?S[ex.id]:null; const levelIdx = E?E[ind.id]:null;
           const label = (levelIdx==null) ? '—' : VA.LEVELS[levelIdx].label;
           const clean = (levelIdx==null) ? '—' : String(label).replace(/\s*\(\d+%\)/, '');
-          const val = cellScoreDivided(ind.id, levelIdx);
+          const val = cellScoreDivided(exIdx, ind.id, levelIdx, exerciseDistributions[exIdx]);
           const txt = (levelIdx==null) ? '—' : (clean + '\n' + VA.floor2(val).toFixed(2));
           row.push({ content: txt });
         } else { row.push({ content: '—' }); }
@@ -71,15 +53,19 @@
         idxs.forEach(function(exIdx){
           const ex=VA.app.exercises[exIdx];
           const S=VA.app.resultsMap[student]; const E=S?S[ex.id]:null; const levelIdx=E?E[ind.id]:null;
-          const coef=(levelIdx==null? null : VA.LEVELS[levelIdx].coef);
-          const indObj=VA.app.indicators.find(i=>i.id===ind.id);
-          const raw = (!indObj || coef==null) ? 0 : (indObj.max*coef);
-          sum += raw;
+          sum += VA.calcExerciseCellScore(exIdx, ind.id, levelIdx, exerciseDistributions[exIdx]);
         });
         mean = VA.round2(sum/idxs.length);
       }
-      const max  = VA.app.indicators.find(function(i){ return i.id === ind.id; })?.max || 0;
-      row.push({ content: mean.toFixed(2) + ' / ' + (max.toFixed ? max.toFixed(1) : max), rawParts: { mean: mean.toFixed(2), max: (max.toFixed ? max.toFixed(1) : String(max)) } });
+      let max = 0;
+      if(idxs.length){
+        let sumMax = 0;
+        idxs.forEach(function(exIdx){
+          sumMax += VA.calcExerciseCellScore(exIdx, ind.id, 4, exerciseDistributions[exIdx]);
+        });
+        max = VA.round2(sumMax/idxs.length);
+      }
+      row.push({ content: mean.toFixed(2) + ' / ' + max.toFixed(2), rawParts: { mean: mean.toFixed(2), max: max.toFixed(2) } });
       body.push(row);
     });
 
@@ -104,7 +90,7 @@
     doc.autoTable({
       head: head,
       body: body,
-      startY: tableStartY,
+      startY: 60,
       styles: {
         font: 'helvetica',
         fontSize: 8,
@@ -172,16 +158,7 @@
 
     // Spazio e legenda
     const _tableY = doc.lastAutoTable.finalY || 60;
-    const noteText = "La valutazione fa riferimento all'eventuale pdp redatto dal consiglio di classe";
-    const noteY = _tableY + 24;
-    const noteLineSpacing = 12;
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(9);
-    const noteLines = doc.splitTextToSize(noteText, 515);
-    doc.text(noteLines, 40, noteY, { lineHeightFactor: 1.4 });
-
-    const noteHeight = noteLines.length > 1 ? (noteLines.length - 1) * noteLineSpacing : 0;
-    const _legendTop = noteY + noteHeight + 24;
+    const _legendTop = _tableY + 28;
     doc.setFont('helvetica', 'bold'); doc.setFontSize(10);
     doc.text('Legenda fasce', 40, _legendTop);
     doc.setFont('helvetica', 'normal'); doc.setFontSize(9);

@@ -31,14 +31,14 @@
   VA.calcIndicatorMeanForStudent = function(stu,indId){
     const idxs=VA.app.exercises.map((e,i)=>(e.covers||[]).includes(indId)?i:-1).filter(i=>i>=0); if(!idxs.length) return 0;
     let sum=0; idxs.forEach(function(exIdx){ const ex=VA.app.exercises[exIdx]; const level=getSavedLevel(stu,ex.id,indId); const dist=VA.getExerciseDistribution(exIdx); sum+=VA.calcExerciseCellScore(exIdx, indId, level, dist); });
-    return VA.round2(sum/idxs.length);
+    return VA.round2(sum);
   };
   VA.calcIndicatorMaxForExercises = function(indId){
     const idxs=VA.app.exercises.map((e,i)=>(e.covers||[]).includes(indId)?i:-1).filter(i=>i>=0);
     if(!idxs.length) return 0;
     let sum=0;
     idxs.forEach(function(exIdx){ const dist=VA.getExerciseDistribution(exIdx); sum+=VA.calcExerciseCellScore(exIdx, indId, 4, dist); });
-    return VA.round2(sum/idxs.length);
+    return VA.round2(sum);
   };
   VA.calcTotalForStudent = function(stu){ let t=0; VA.app.exercises.forEach(function(_,i){ t+=VA.calcExerciseScoreForStudent(stu,i); }); return VA.round1(t); };
   function renderLevelSelect(student, indicatorId, exerciseId, savedIdx){

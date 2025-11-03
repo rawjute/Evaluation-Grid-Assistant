@@ -60,26 +60,9 @@
           row.push({ content: txt });
         } else { row.push({ content: '—' }); }
       });
-      // Totale per indicatore (media raw)
-      const idxs=VA.app.exercises.map((e,i)=>(e.covers||[]).includes(ind.id)?i:-1).filter(i=>i>=0);
-      let mean=0;
-      if(idxs.length){
-        let sum=0;
-        idxs.forEach(function(exIdx){
-          const ex=VA.app.exercises[exIdx];
-          const S=VA.app.resultsMap[student]; const E=S?S[ex.id]:null; const levelIdx=E?E[ind.id]:null;
-          sum += VA.calcExerciseCellScore(exIdx, ind.id, levelIdx, exerciseDistributions[exIdx]);
-        });
-        mean = VA.round2(sum/idxs.length);
-      }
-      let max = 0;
-      if(idxs.length){
-        let sumMax = 0;
-        idxs.forEach(function(exIdx){
-          sumMax += VA.calcExerciseCellScore(exIdx, ind.id, 4, exerciseDistributions[exIdx]);
-        });
-        max = VA.round2(sumMax/idxs.length);
-      }
+      // Totale per indicatore
+      const mean = VA.calcIndicatorMeanForStudent(student, ind.id);
+      const max = VA.calcIndicatorMaxForExercises(ind.id);
       row.push({ content: mean.toFixed(2) + ' / ' + max.toFixed(2), rawParts: { mean: mean.toFixed(2), max: max.toFixed(2) } });
       body.push(row);
     });
